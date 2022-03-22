@@ -4,40 +4,32 @@
 // the "tuesday" quote.  It can be enhanced to display a different
 // one dependingon which day of the week it is!
 //----------------------------------------------------------
-function read_display_Quote(){
+function read_display_Quote() {
     //console.log("inside the function")
 
     //get into the right collection
-    db.collection("quotes").doc("tuesday")
-    .onSnapshot(function(tuesdayDoc) {
-        //console.log(tuesdayDoc.data());
-        document.getElementById("quote-goes-here").innerHTML=tuesdayDoc.data().quote;
-    })
+    db.collection("quotes").doc("Tuesday")
+        .onSnapshot(function (tuesdayDoc) {
+            //console.log(tuesdayDoc.data());
+            document.getElementById("quote-goes-here").innerHTML = tuesdayDoc.data().quote;
+        })
 }
-read_display_Quote();
 
 //---------------------------------------------------------------------------
 // This is a function that gets called everytime the page loads.
 // It is meant to get the name of the user who is logged in, and insert it 
 // on the page for a warm welcome. 
 //---------------------------------------------------------------------------
-function insertName(){
-// to check if the user is logged in:
- firebase.auth().onAuthStateChanged(user =>{
-     if (user){
-         console.log(user.uid); // let me to know who is the user that logged in to get the UID
-        currentUser = db.collection("users").doc(user.uid); // will to to the firestore and go to the document of the user
-        currentUser.get().then(userDoc=>{
-            //get the user name
-            var user_Name= userDoc.data().name;
-            console.log(user_Name);
-            $("#name-goes-here").text(user_Name); //jquery
-            // document.getElementByID("name-goes-here").innetText=user_Name;
-        })    
-    }
- })
+function insertName() {
+    currentUser.get().then(userDoc => {
+        //get the user name
+        var user_Name = userDoc.data().name;
+        console.log(user_Name);
+        $("#name-goes-here").text(user_Name); //jquery
+        // document.getElementByID("name-goes-here").innetText=user_Name;
+    })
+
 }
-insertName();
 
 //--------------------------------------------------------------------------
 // This is a function that we call only ONE time, to populate the database.
@@ -55,8 +47,9 @@ function writeHikes() {
         city: "Burnaby",
         province: "BC",
         level: "easy",
-        length: "10 km",
-        length_time: "2h 33mm"
+        length: 10,
+        length_time: 60,
+        last_updated: firebase.firestore.FieldValue.serverTimestamp()
     });
     hikesRef.add({
         id: "AM01",
@@ -64,8 +57,9 @@ function writeHikes() {
         city: "Anmore",
         province: "BC",
         level: "moderate",
-        length: "10.5 km",
-        length_time: "3h 17mm"
+        length: 10.5,
+        length_time: 80,
+        last_updated: firebase.firestore.FieldValue.serverTimestamp()
     });
     hikesRef.add({
         id: "NV01",
@@ -73,8 +67,9 @@ function writeHikes() {
         city: "North Vancouver",
         province: "BC",
         level: "hard",
-        length: "8.2 km",
-        length_time: "3h 20m"
+        length: 8.2,
+        length_time: 120,
+        last_updated: firebase.firestore.FieldValue.serverTimestamp()
     });
 }
 
@@ -87,8 +82,11 @@ function writeHikes() {
 function populateCardsDynamically() {
     let hikeCardTemplate = document.getElementById("hikeCardTemplate");
     let hikeCardGroup = document.getElementById("hikeCardGroup");
-    
-    db.collection("Hikes").get()
+
+    db.collection("Hikes")
+        .orderBy("length_time")
+        .limit(2)
+        .get()
         .then(allHikes => {
             allHikes.forEach(doc => {
                 var hikeName = doc.data().name; //gets the name field
@@ -98,17 +96,55 @@ function populateCardsDynamically() {
                 testHikeCard.querySelector('.card-title').innerHTML = hikeName;
                 testHikeCard.querySelector('.card-length').innerHTML = hikeLength;
                 testHikeCard.querySelector('a').onclick = () => setHikeData(hikeID);
+
+                testHikeCard.querySelector('i').id = `save-${hikeID}`;
+                testHikeCard.querySelector('i').onclick = () => saveBookmark(hikeID);
+
                 testHikeCard.querySelector('img').src = `./images/${hikeID}.jpg`;
                 hikeCardGroup.appendChild(testHikeCard);
             })
 
         })
 }
-populateCardsDynamically();
+
+//-----------------------------------------------------------------------------
+// This function is called whenever the user clicks on the "bookmark" icon.
+// It adds the hike to the "bookmarks" array
+// Then it will change the bookmark icon from the hollow to the solid version. 
+//-----------------------------------------------------------------------------
+function saveBookmark(hikeID) {
+    currentUser.set({
+        bookmarks: firebase.firestore.FieldValue.arrayUnion(hikeID)
+    }, {
+        merge: true
+    })
+    .then(function() {
+        console.log("bookmark has been saved for: " + currentUser);
+        var iconID = `save-${hikeID}`;
+        document.getElementById(iconID).innerText = "bookmark";
+    })
+}
 
 //--------------------------------------------------------------
 // This function saves the current hikeID into the localStorage
 //--------------------------------------------------------------
-function setHikeData(id){
-    localStorage.setItem ('hikeID', id);
+function setHikeData(id) {
+    localStorage.setItem('hikeID', id);
 }
+
+var currentUser;
+firebase.auth().onAuthStateChanged(user => {
+    if (user) {
+        currentUser = db.collection("users").doc(user.uid); //global
+        console.log(currentUser);
+
+        // the following functions are always called when someone is logged in
+        read_display_Quote();
+        insertName();
+        populateCardsDynamically();
+    } else {
+        // No user is signed in.
+        console.log("No user is signed in");
+        window.location.href = "login.html";
+    }
+});
