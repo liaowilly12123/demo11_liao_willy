@@ -101,10 +101,11 @@ function populateCardsDynamically() {
                 testHikeCard.querySelector('.card-last-updated').innerHTML = `Last updated: ${hikeLastUpdated}`;
 
                 testHikeCard.querySelector('a').onclick = () => setHikeData(hikeID);
-
                 testHikeCard.querySelector('i').id = `save-${hikeID}`;
                 testHikeCard.querySelector('i').onclick = () => saveBookmark(hikeID);
-
+                
+                testHikeCard.querySelector('.read-more').href = "eachHike.html?hikeName="+hikeName +"&id=" + hikeID;
+                
                 testHikeCard.querySelector('img').src = `./images/${hikeID}.jpg`;
                 hikeCardGroup.appendChild(testHikeCard);
             })
