@@ -92,9 +92,14 @@ function populateCardsDynamically() {
                 var hikeName = doc.data().name; //gets the name field
                 var hikeID = doc.data().id; //gets the unique ID field
                 var hikeLength = doc.data().length; //gets the length field
+                var hikeDuration = doc.data().length_time;
+                var hikeLastUpdated = doc.data().last_updated.toDate();
                 let testHikeCard = hikeCardTemplate.content.cloneNode(true);
                 testHikeCard.querySelector('.card-title').innerHTML = hikeName;
-                testHikeCard.querySelector('.card-length').innerHTML = hikeLength;
+                testHikeCard.querySelector('.card-length').innerHTML = `Length: ${hikeLength} km`;
+                testHikeCard.querySelector('.card-duration').innerHTML = `Duration: ${hikeDuration}min`;
+                testHikeCard.querySelector('.card-last-updated').innerHTML = `Last updated: ${hikeLastUpdated}`;
+
                 testHikeCard.querySelector('a').onclick = () => setHikeData(hikeID);
 
                 testHikeCard.querySelector('i').id = `save-${hikeID}`;
